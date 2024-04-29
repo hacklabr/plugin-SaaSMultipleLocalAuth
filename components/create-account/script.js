@@ -14,10 +14,11 @@ app.component('create-account', {
         const globalState = useGlobalState();
         const terms = $MAPAS.config.LGPD;
         const termsQtd = Object.entries(terms).length;
+        console.log(termsQtd);
 
         return {
             actualStep: globalState['stepper'] ?? 0,
-            totalSteps: termsQtd + 2,
+            totalSteps: termsQtd,
             terms,
             passwordRules: {},
             strongness: 0,
@@ -29,6 +30,7 @@ app.component('create-account', {
             confirmPassword: '',
             agent: null,
             recaptchaResponse: '',
+            creating: false,
             created: false,
             emailSent: false,
         }
@@ -39,6 +41,12 @@ app.component('create-account', {
             type: String,
             required: true
         }
+    },
+
+    created() {
+        this.agent = Vue.ref(new Entity('agent'));
+        this.agent.type = 1;
+        this.agent.terms = { area: [] }
     },
 
     mounted() {
@@ -54,7 +62,7 @@ app.component('create-account', {
 
     computed: {
         arraySteps() {
-            let steps = Object.entries(this.terms).length + 2;
+            let steps = Object.entries(this.terms).length + 1;
             let totalSteps = [];
             for (let i = 0; i < steps; i++) {
                 totalSteps.push(i);
@@ -139,12 +147,6 @@ app.component('create-account', {
     },
 
     methods: {
-        startAgent() {
-            this.agent = Vue.ref(new Entity('agent'));
-            this.agent.type = 1;
-            this.agent.terms = { area: [] }
-        },
-
         async nextStep() {
             this.goToStep(this.actualStep + 1);
         },
@@ -156,24 +158,18 @@ app.component('create-account', {
         async goToStep(step) {
             const globalState = useGlobalState();
 
-            if (this.actualStep == 0) {
-                if (await this.validateFields()) {
-                    this.actualStep = step;
-                    if (step == this.totalSteps - 1) {
-                        this.startAgent();
-                    }
-                }
+            if (this.totalSteps == 0 && await this.validateFields()) {
+                this.register();
+            } else if (this.actualStep == this.totalSteps && await this.validateFields()) {
+                this.register();
             } else {
-                if (step == this.totalSteps - 1) {
-                    this.startAgent();
-                }
-                this.actualStep = step;
-            }
-
-            if (this.actualStep >= this.totalSteps) {
-                this.actualStep = this.totalSteps;
-            } else if (this.actualStep <= 0) {
-                this.actualStep = 0;
+                if (step >= this.totalSteps) {
+                    this.actualStep = this.totalSteps;
+                } else if (step <= 0) {
+                    this.actualStep = 0;
+                } else {
+                    this.actualStep = step;
+                };
             }
 
             globalState['stepper'] = this.actualStep;
@@ -187,39 +183,38 @@ app.component('create-account', {
 
         /* Do register */
         async register() {
+            this.creating = true;
+
             let api = new API();
-
-            if (this.validateAgent()) {
-                let dataPost = {
+            let dataPost = {
+                'email': this.email,
+                'cpf': this.cpf,
+                'password': this.password,
+                'confirm_password': this.confirmPassword,
+                'slugs': this.slugs,
+                'g-recaptcha-response': this.recaptchaResponse,
+                'agentData': {
                     'name': this.agent.name,
-                    'email': this.email,
-                    'cpf': this.cpf,
-                    'password': this.password,
-                    'confirm_password': this.confirmPassword,
-                    'slugs': this.slugs,
-                    'g-recaptcha-response': this.recaptchaResponse,
-                    'agentData': {
-                        'name': this.agent.name,
-                        'terms:area': this.agent.terms.area,
-                        'shortDescription': this.agent.shortDescription,
-                    },
-                }
-
-                await api.POST($MAPAS.baseURL + "autenticacao/register", dataPost).then(response => response.json().then(dataReturn => {
-                    if (dataReturn.error) {
-                        this.throwErrors(dataReturn.data);
-                    } else {
-                        if (dataReturn.redirectTo) {
-                            window.location = dataReturn.redirectTo;
-                        }
-                        this.created = true;
-                        if (dataReturn.emailSent) {
-                            this.emailSent = true;
-                        }
-                        window.scrollTo(0, 0);
-                    }
-                }));
+                    'terms:area': this.agent.terms.area,
+                    'shortDescription': this.agent.shortDescription,
+                },
             }
+
+            await api.POST($MAPAS.baseURL + "autenticacao/register", dataPost).then(response => response.json().then(dataReturn => {
+                if (dataReturn.error) {
+                    this.throwErrors(dataReturn.data);
+                } else {
+                    if (dataReturn.redirectTo) {
+                        window.location = dataReturn.redirectTo;
+                    }
+                    this.created = true;
+                    this.creating = false;
+                    if (dataReturn.emailSent) {
+                        this.emailSent = true;
+                    }
+                    window.scrollTo(0, 0);
+                }
+            }));
         },
 
         /* Cancel register */
@@ -248,6 +243,7 @@ app.component('create-account', {
             let api = new API();
             let success = true;
             let data = {
+                'name': this.agent.name,
                 'cpf': this.cpf,
                 'email': this.email,
                 'password': this.password,
@@ -258,8 +254,6 @@ app.component('create-account', {
                 if (dataReturn.error) {
                     this.throwErrors(dataReturn.data);
                     success = false;
-                } else {
-                    this.recaptchaResponse = '';
                 }
             }));
 
@@ -292,26 +286,6 @@ app.component('create-account', {
                     }
                 }
             }
-        },
-
-        validateAgent() {
-            let errors = {
-                'agent': [],
-            };
-            if (!this.agent.name) {
-                errors.agent.push(__('Nome obrigatório', 'create-account'));
-            }
-            if (!this.agent.shortDescription) {
-                errors.agent.push(__('Descrição obrigatória', 'create-account'));
-            }
-            if (this.agent.terms.area.length == 0) {
-                errors.agent.push(__('Área de atuação obrigatória', 'create-account'));
-            }
-            if (errors.agent.length > 0) {
-                this.throwErrors(errors);
-                return false;
-            }
-            return true;
         },
 
         togglePassword(id, event) {

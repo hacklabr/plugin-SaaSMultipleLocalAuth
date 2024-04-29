@@ -89,20 +89,6 @@
             }
         }
 
-        .document-label {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            .question {
-                display: flex;
-                gap: 4px;
-                align-items: center;
-                background: unset;
-                border: unset;
-            }
-        }
-
         .password {     
             position: relative;           
             &-rules {
@@ -241,7 +227,26 @@
         }
     }
 
-    &__created {
+    &__cpf-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__cpf-tip {
+        display: flex;
+        max-width: 250px;
+    }
+
+    &__cpf-tip-button {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        background: unset;
+        border: unset;
+    }
+
+    &__created{
         .title {
             align-items: center;
             display: flex;
@@ -261,6 +266,7 @@
             }
 
         }
+
         .emailSent {
             font-weight: 400;
             font-size: 16px;

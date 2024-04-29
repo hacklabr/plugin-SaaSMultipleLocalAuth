@@ -555,6 +555,7 @@ class Provider extends \MapasCulturais\AuthProvider {
         $config = $this->_config;
         $hasErrors = false;
 
+        $name = $app->request->post('agentData') ? $app->request->post('agentData')['name'] : $app->request->post('name');
         $cpf = $app->request->post('cpf');
         $email = filter_var( $app->request->post('email') , FILTER_SANITIZE_EMAIL);
         $pass = $app->request->post('password');
@@ -564,6 +565,7 @@ class Provider extends \MapasCulturais\AuthProvider {
         $errors = [
             'captcha' => [],
             'user' => [
+                'name' => [],
                 'cpf' => [],
                 'email' => [],
                 'password' => []
@@ -577,6 +579,12 @@ class Provider extends \MapasCulturais\AuthProvider {
                 'success' => false,
                 'errors' => $errors
             ];
+        }
+
+        // validate name
+        if (empty($name)) {
+            array_push($errors['user']['name'], i::__('Por favor, informe o seu nome.', 'multipleLocal'));
+            $hasErrors = true;
         }
 
         // validates cpf only if login by cpf is enabled
@@ -646,8 +654,7 @@ class Provider extends \MapasCulturais\AuthProvider {
     }
     
     
-    // RECOVER PASSWORD
-    
+    // RECOVER PASSWORD    
     function renderRecoverForm($theme) {
         $app = App::i();
         $theme->render('pass-recover', [
@@ -727,7 +734,6 @@ class Provider extends \MapasCulturais\AuthProvider {
     
     function recover() {
         $app = App::i();
-        $config = $app->_config;
         $email = filter_var($app->request->post('email'), FILTER_VALIDATE_EMAIL);
         $user = $app->repo("User")->findOneBy(array('email' => $email));
 
@@ -821,7 +827,7 @@ class Provider extends \MapasCulturais\AuthProvider {
             ];
         }
     }
-
+    
     function adminchangeuserpassword() {
         $app = App::i();
 
@@ -1243,6 +1249,7 @@ class Provider extends \MapasCulturais\AuthProvider {
                 $this->authenticateUser($user);
                 $authenticated = true;
             }
+
             return [ 
                 'success' => true,
                 'authenticated' => $authenticated,
@@ -1253,9 +1260,7 @@ class Provider extends \MapasCulturais\AuthProvider {
                     $config['auth.config']['userMustConfirmEmailToUseTheSystem']
                     ) ? true : false
             ];
-
         } else {
-
             return [ 
                 'success' => false,
                 'errors' => $validateFields['errors']
