@@ -19,7 +19,7 @@ $this->import('
 
 <div class="create-account"> 
 
-    <div v-if="!created && !creating" class="create-account__title">
+    <div class="create-account__title">
         <label><?= $this->text('title', i::__('Novo cadastro')) ?> </label>
         <p v-if="totalSteps == 1"><?= sprintf($this->text('description', i::__('Preencha os campos abaixo para criar seu cadastro no %s.')), $app->siteName) ?> </p>
         <p v-if="totalSteps > 1"><?= sprintf($this->text('step-description', i::__('Siga os passos para criar o seu cadastro no %s.')), $app->siteName) ?> </p>
@@ -28,12 +28,12 @@ $this->import('
     <!-- Creating account -->
     <mc-card v-if="!created && !creating" class="no-title">        
         <template #content> 
-            <div v-if="totalSteps > 1" class="create-account__timeline">
+            <div v-if="totalSteps >= 1" class="create-account__timeline">
                 <mc-stepper :steps="arraySteps" disable-navigation no-labels></mc-stepper>
             </div>
 
             <!-- First step -->
-            <div v-if="step==0 && !creating" class="create-account__step grid-12">
+            <div v-if="step==0" class="create-account__step grid-12">
                 <form class="col-12 grid-12" @submit.prevent="nextStep();">
                     <entity-field :entity="agent" classes="col-12" hide-required label=<?php i::esc_attr_e("Nome")?> prop="name" fieldDescription="<?= i::__('As pessoas irão encontrar você por esse nome.') ?>"></entity-field>
 
@@ -97,42 +97,23 @@ $this->import('
             </div>
 
             <!-- Terms steps -->
-            <div v-show="step==index+1 && !creating" v-for="(value, name, index) in terms" class="create-account__step grid-12">
+            <div v-show="step==index+1" v-for="(value, name, index) in terms" class="create-account__step grid-12">
+                {{index}}
                 <label class="title col-12"> {{value.title}} </label>
                 <div class="term col-12" v-html="value.text" :id="'term'+index" ref="terms"></div>
                 <div class="divider col-12"></div>                
                 <button class="col-12 button button--primary button--large button--md" :id="'acceptTerm'+index" @click="nextStep(); acceptTerm(name)"> {{value.buttonText}} </button>
                 <button class="col-12 button button--text" @click="cancel()"> <?= i::__('Voltar e excluir minhas informações') ?> </button>
             </div>
-        </template>
-    </mc-card>
 
-    <!-- Creating account -->
-    <mc-card v-if="creating" class="no-title card-created">
-        <template #content>
-            <div class="create-account__created grid-12">
+            <!-- Creating account -->
+            <div v-if="step == totalSteps" class="create-account__created grid-12">
                 <div class="col-12 title">
                     <mc-icon name="loading" class="title__icon"></mc-icon>
                     <label class="col-12 title__label"> <?= i::__('Criando seu cadastro') ?> </label>
                 </div>
-
-                <p v-if="emailSent" class="emailSent col-12"> <?= sprintf($this->text('email-sent', i::__('Acesse seu e-mail para confirmar a criação de seu cadastro no %s.')), $app->siteName) ?> </p>
             </div>
-        </template>
-    </mc-card>
 
-    <!-- Account created -->            
-    <mc-card v-if="created" class="no-title card-created">
-        <template #content>
-            <div class="create-account__created grid-12">
-                <div class="col-12 title">
-                    <mc-icon name="circle-checked" class="title__icon"></mc-icon>
-                    <label v-if="emailSent" class="col-12 title__label"> <?= i::__('E-mail de confirmação enviado!') ?> </label>
-                    <label v-if="!emailSent" class="col-12 title__label"> <?= i::__('Seu cadastro foi criado com sucesso!') ?> </label>
-                </div>
-
-                <p v-if="emailSent" class="emailSent col-12"> <?= sprintf($this->text('email-sent', i::__('Acesse seu e-mail para confirmar a criação de seu cadastro no %s.')), $app->siteName) ?> </p>
-            </div>
         </template>
     </mc-card>
 </div>

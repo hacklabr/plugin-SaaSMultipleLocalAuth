@@ -14,11 +14,10 @@ app.component('create-account', {
         const globalState = useGlobalState();
         const terms = $MAPAS.config.LGPD;
         const termsQtd = Object.entries(terms).length;
-        console.log(termsQtd);
 
         return {
             actualStep: globalState['stepper'] ?? 0,
-            totalSteps: termsQtd,
+            totalSteps: termsQtd + 1,
             terms,
             passwordRules: {},
             strongness: 0,
@@ -62,7 +61,7 @@ app.component('create-account', {
 
     computed: {
         arraySteps() {
-            let steps = Object.entries(this.terms).length + 1;
+            let steps = Object.entries(this.terms).length + 2;
             let totalSteps = [];
             for (let i = 0; i < steps; i++) {
                 totalSteps.push(i);
@@ -158,18 +157,16 @@ app.component('create-account', {
         async goToStep(step) {
             const globalState = useGlobalState();
 
-            if (this.totalSteps == 0 && await this.validateFields()) {
-                this.register();
-            } else if (this.actualStep == this.totalSteps && await this.validateFields()) {
-                this.register();
+            if (step >= this.totalSteps) {
+                this.actualStep = this.totalSteps;
+            } else if (step <= 0) {
+                this.actualStep = 0;
             } else {
-                if (step >= this.totalSteps) {
-                    this.actualStep = this.totalSteps;
-                } else if (step <= 0) {
-                    this.actualStep = 0;
-                } else {
-                    this.actualStep = step;
-                };
+                this.actualStep = step;
+            };
+
+            if (this.actualStep == this.totalSteps && await this.validateFields()) {
+                this.register();
             }
 
             globalState['stepper'] = this.actualStep;
@@ -183,8 +180,6 @@ app.component('create-account', {
 
         /* Do register */
         async register() {
-            this.creating = true;
-
             let api = new API();
             let dataPost = {
                 'email': this.email,
@@ -208,7 +203,6 @@ app.component('create-account', {
                         window.location = dataReturn.redirectTo;
                     }
                     this.created = true;
-                    this.creating = false;
                     if (dataReturn.emailSent) {
                         this.emailSent = true;
                     }
