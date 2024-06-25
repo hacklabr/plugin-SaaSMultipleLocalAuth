@@ -1,5 +1,5 @@
 <?php
-namespace MultipleLocalAuth;
+namespace SaaSMultipleLocalAuth;
 use MapasCulturais\App;
 use MapasCulturais\Entities;
 use MapasCulturais\Entities\Agent;
