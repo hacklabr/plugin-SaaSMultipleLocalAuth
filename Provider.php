@@ -1240,7 +1240,7 @@ class Provider extends \MapasCulturais\AuthProvider {
             $user->{self::$tokenVerifyAccountMetadata} = $token; 
             $user->{self::$accountIsActiveMetadata} = '0'; 
             $app->modules['LGPD']->acceptTerms($app->request->post('slugs'), $user);
-            $user->save();
+            $user->save(true);
             $app->enableAccessControl();
 
 
