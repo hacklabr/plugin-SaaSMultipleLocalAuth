@@ -261,6 +261,14 @@ class Provider extends \MapasCulturais\AuthProvider {
             $this->render('multiple-local', [ 'config' => $config ]);
         });
 
+        // Mesmo comportamento do core em Auth::__construct (só há hook para auth.index lá).
+        // Cadastro em /autenticacao/register/?redirectTo=... não passava pelo index, então a sessão não era preenchida.
+        $app->hook('GET(auth.register)', function () use($app){
+            if (isset($this->data['redirectTo'])) {
+                $app->auth->setRedirectPath($this->data['redirectTo']);
+            }
+        }, -10);
+
         $app->hook('GET(auth.register)', function () use($config){
             $this->render("register", [ 'config' => $config ]);
         });
