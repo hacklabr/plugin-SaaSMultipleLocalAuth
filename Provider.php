@@ -517,7 +517,20 @@ class Provider extends \MapasCulturais\AuthProvider {
         if (empty($_POST["g-recaptcha-response"])) return false;
 
         $token = $_POST["g-recaptcha-response"];
+        $token_hash = hash('sha256', $token);
+
+        // a Google só aceita verificar cada token uma vez; o cadastro valida em /validate e de novo em /register
+        $previous = $_SESSION['multipleLocalRecaptchaVerified'] ?? null;
+        if ($previous && $previous['hash'] === $token_hash && $previous['expires'] > time()) {
+            unset($_SESSION['multipleLocalRecaptchaVerified']);
+            return true;
+        }
+
         $verified = $this->verificarToken($token, $config["google-recaptcha-secret"]);   
+
+        if ($verified) {
+            $_SESSION['multipleLocalRecaptchaVerified'] = ['hash' => $token_hash, 'expires' => time() + 1800];
+        }
 
         return $verified ? true : false;
     }

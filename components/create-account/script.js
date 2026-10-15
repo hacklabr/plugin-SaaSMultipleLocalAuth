@@ -150,6 +150,11 @@ app.component('create-account', {
         async goToStep(step) {
             const globalState = useGlobalState();
 
+            // o widget do reCAPTCHA só existe no passo 0
+            if (this.actualStep == 0 && step > 0 && !(await this.validateFields())) {
+                return;
+            }
+
             if (step >= this.totalSteps) {
                 this.actualStep = this.totalSteps;
             } else if (step <= 0) {
@@ -158,7 +163,7 @@ app.component('create-account', {
                 this.actualStep = step;
             };
 
-            if (this.actualStep == this.totalSteps && await this.validateFields()) {
+            if (this.actualStep == this.totalSteps) {
                 this.register();
             }
 
@@ -191,6 +196,8 @@ app.component('create-account', {
             await api.POST($MAPAS.baseURL + "autenticacao/register", dataPost).then(response => response.json().then(dataReturn => {
                 if (dataReturn.error) {
                     this.throwErrors(dataReturn.data);
+                    this.slugs = [];
+                    this.goToStep(0);
                 } else {
                     if (dataReturn.redirectTo) {
                         window.location = dataReturn.redirectTo;
@@ -251,7 +258,9 @@ app.component('create-account', {
             const messages = useMessages();
 
             if (this.recaptchaResponse !== '') {
-                grecaptcha.reset();
+                try {
+                    grecaptcha.reset();
+                } catch (e) {}
                 this.expiredCaptcha();
             }
 
